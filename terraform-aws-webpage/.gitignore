@@ -8,6 +8,7 @@ aws-creds.tfvars
 .terraform.lock.hcl
 crash.log
 crash.*.log
+*.pem
 
 # Terraform variable files that may contain secrets
 *.tfvars
