@@ -1,6 +1,10 @@
 # AWS credentials
 aws-creds.tfvars
+aws-creds.auto.tfvars
+
+# SSH private keys
 *.pem
+keys/
 
 # Terraform
 .terraform/
