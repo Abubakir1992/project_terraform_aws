@@ -2,12 +2,12 @@ output "vpc_id" {
   value = aws_vpc.web_vpc.id
 }
 
-output "ec2_id" {
-  value = aws_instance.web[*].id
+output "autoscaling_group_name" {
+  value = aws_autoscaling_group.web.name
 }
 
-output "ec2_private_ip" {
-  value = aws_instance.web[*].private_ip
+output "launch_template_id" {
+  value = aws_launch_template.web.id
 }
 
 output "alb_dns_name" {
