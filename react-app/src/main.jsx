@@ -40,6 +40,8 @@ function App() {
     >
       <h1>React deployed with GitHub Actions</h1>
 
+      <h1>React deployed with GitHub Actions</h1>
+
       <p>This application is hosted on AWS EC2 behind an ALB.</p>
 
       <h2>EC2 instance serving the instance information</h2>
