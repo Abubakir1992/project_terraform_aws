@@ -250,7 +250,6 @@ resource "aws_autoscaling_group" "web" {
     aws_route_table_association.public_1,
     aws_route_table_association.public_2,
     aws_lb_listener.http,
-    aws_lb_listener.https,
     aws_apigatewayv2_route.personal,
     aws_lambda_permission.personal
   ]

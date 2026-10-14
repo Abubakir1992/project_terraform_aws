@@ -1,6 +1,6 @@
 # Terraform AWS React and Aurora personal-data app
 
-React on EC2 behind an HTTPS ALB saves personal details through API Gateway,
+React on EC2 behind CloudFront HTTPS and an ALB saves personal details through API Gateway,
 Cognito authentication, a Python Lambda, and Aurora MySQL Serverless v2 Data API.
 The database runs in isolated subnets, with no public SQL access. AWS manages the
 database password in Secrets Manager; Terraform and React never receive it.
@@ -11,16 +11,12 @@ updates that user's record. There is no public listing or read endpoint.
 
 ## Deployment
 
-1. In ACM **us-east-1**, request and validate a certificate for a domain you own,
-   such as `app.example.com`. Keep the certificate's DNS validation records.
-2. In `terraform-aws-webpage`, provide the existing AWS credential variables
-   securely, plus these nonsecret settings in a local ignored `terraform.tfvars`:
-
-   ```hcl
-   website_domain      = "app.example.com"
-   acm_certificate_arn = "arn:aws:acm:us-east-1:ACCOUNT:certificate/CERTIFICATE-ID"
-   ```
-
+1. Pull the `feat/aurora-personal-data` branch. No purchased domain, DNS setup,
+   or ACM certificate is required. CloudFront supplies an AWS HTTPS address.
+2. In `terraform-aws-webpage`, remove old `website_domain` and
+   `acm_certificate_arn` entries from all local `.tfvars`/`.auto.tfvars` files and
+   any command-line `-var` arguments. Keep the existing AWS credential settings
+   secure and keep your existing Terraform backend and state.
 3. Check engine availability in your account/region before applying:
 
    ```sh
@@ -30,11 +26,18 @@ updates that user's record. There is no public listing or read endpoint.
 
    Default: `8.0.mysql_aurora.3.10.3`. Override `aurora_engine_version` if needed
    with an available Aurora MySQL 3.x version supporting Data API and Serverless v2.
-4. Run `terraform init`, `terraform plan -out=personal-data.tfplan`, review the plan, and run
-   `terraform apply personal-data.tfplan`. This creates billable AWS resources and rolls EC2
-   instances to a new launch template. It does not modify `state-bootstrap`.
-5. Point your domain to the `alb_dns_name` output with a DNS CNAME (or Route 53
-   alias). Open the `website` output over HTTPS. HTTP redirects to this domain.
+4. Run `terraform init`, `terraform plan -out=personal-data.tfplan`, review the
+   plan, and run `terraform apply personal-data.tfplan`. Generate a new plan after
+   changing variables or pulling changes. This creates billable AWS resources,
+   creates a CloudFront distribution, changes the ALB HTTP listener to forward
+   static content, and rolls EC2 instances. It does not modify `state-bootstrap`.
+   If an old HTTPS listener exists in state, the plan removes it because CloudFront
+   now provides HTTPS. Resources from an earlier partial apply stay in your state;
+   there is no need to destroy everything or start a new state.
+5. Run `terraform output -raw website` and open that exact `https://...cloudfront.net`
+   address. CloudFront deployment and the EC2 rolling refresh can take several
+   minutes. Cognito callbacks, logout URLs, API CORS, and EC2's public app config
+   all use the generated CloudFront hostname automatically.
 6. In Cognito, open the pool identified by `cognito_user_pool_id`. Create an
    invited user with their email and send the invitation. The hosted sign-in page
    handles the temporary password and initial password change. Self-signup is
@@ -49,6 +52,17 @@ The table is created on the first authenticated save. The Lambda uses bound SQL
 parameters and derives record ownership from the verified token, never the body.
 Tokens stay in browser memory and expire after 15 minutes; sign in again after
 expiry or reload. OAuth uses authorization code, PKCE, and state validation.
+
+## Temporary HTTPS address
+
+CloudFront uses its default `*.cloudfront.net` certificate and redirects viewer
+HTTP requests to HTTPS. Its origin is the existing ALB over HTTP and serves only
+static React assets and public app configuration. Personal data and bearer tokens
+are sent directly from the browser to the HTTPS API Gateway endpoint; they never
+travel through the HTTP ALB origin. Cognito sign-in is also HTTPS. CloudFront
+caching is disabled, so config changes and frontend deployments need no cache
+invalidation. OAuth callback query strings and cookies are not forwarded to EC2.
+The address remains usable while this CloudFront distribution exists.
 
 ## Existing GitHub deployment
 
@@ -86,6 +100,5 @@ The Lambda role can execute statements only on this cluster and retrieve only it
 managed secret. That secret belongs to the database administrator; future APIs
 with broader query capabilities should use a separate restricted database user.
 
-No resources are applied by opening or merging this PR. Configure DNS, ACM, and
-invite users before using real personal data. Set an appropriate retention/deletion
+No resources are applied by opening or merging this PR. Invite users before using real personal data. Set an appropriate retention/deletion
 process for records and their backups before production use.

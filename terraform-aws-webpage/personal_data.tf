@@ -1,17 +1,3 @@
-variable "website_domain" {
-  description = "Domain pointing to the ALB, for example app.example.com (no scheme or path)."
-  type        = string
-  validation {
-    condition     = can(regex("^[A-Za-z0-9][A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", var.website_domain))
-    error_message = "Provide a DNS hostname without a scheme or path."
-  }
-}
-
-variable "acm_certificate_arn" {
-  description = "Issued ACM certificate in us-east-1 covering website_domain."
-  type        = string
-}
-
 variable "aurora_engine_version" {
   description = "Supported Aurora MySQL 3.x version with Data API and Serverless v2 in us-east-1."
   type        = string
@@ -19,7 +5,7 @@ variable "aurora_engine_version" {
 }
 
 locals {
-  website_origin = "https://${var.website_domain}"
+  website_origin = "https://${aws_cloudfront_distribution.web.domain_name}"
   app_config = {
     apiUrl      = aws_apigatewayv2_api.personal.api_endpoint
     authUrl     = "https://${aws_cognito_user_pool_domain.personal.domain}.auth.us-east-1.amazoncognito.com"
