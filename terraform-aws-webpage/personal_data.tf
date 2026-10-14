@@ -5,7 +5,7 @@ variable "aurora_engine_version" {
 }
 
 locals {
-  website_origin = "https://${aws_cloudfront_distribution.web.domain_name}"
+  website_origin = "https://${local.custom_domain ? var.website_domain : aws_cloudfront_distribution.web.domain_name}"
   app_config = {
     apiUrl      = aws_apigatewayv2_api.personal.api_endpoint
     authUrl     = "https://${aws_cognito_user_pool_domain.personal.domain}.auth.us-east-1.amazoncognito.com"

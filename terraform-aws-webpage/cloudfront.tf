@@ -5,7 +5,9 @@ data "aws_cloudfront_cache_policy" "disabled" {
 
 resource "aws_cloudfront_distribution" "web" {
   enabled             = true
-  comment             = "Temporary HTTPS address for the personal-data React app"
+  comment             = "HTTPS website for the personal-data React app"
+  aliases             = local.custom_domain ? [var.website_domain] : []
+  is_ipv6_enabled     = true
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
   http_version        = "http2"
@@ -41,7 +43,10 @@ resource "aws_cloudfront_distribution" "web" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = !local.custom_domain
+    acm_certificate_arn            = local.custom_domain ? aws_acm_certificate_validation.website[0].certificate_arn : null
+    ssl_support_method             = local.custom_domain ? "sni-only" : null
+    minimum_protocol_version       = local.custom_domain ? "TLSv1.2_2021" : "TLSv1"
   }
 
   depends_on = [aws_lb_listener.http]

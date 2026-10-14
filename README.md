@@ -11,12 +11,16 @@ updates that user's record. There is no public listing or read endpoint.
 
 ## Deployment
 
-1. Pull the `feat/aurora-personal-data` branch. No purchased domain, DNS setup,
-   or ACM certificate is required. CloudFront supplies an AWS HTTPS address.
-2. In `terraform-aws-webpage`, remove old `website_domain` and
-   `acm_certificate_arn` entries from all local `.tfvars`/`.auto.tfvars` files and
-   any command-line `-var` arguments. Keep the existing AWS credential settings
-   secure and keep your existing Terraform backend and state.
+1. Pull the `feat/aurora-personal-data` branch. The default website is now
+   `https://abubakir-dev.com`. The registered domain must already delegate to the
+   existing public Route 53 zone; Terraform does not register a domain.
+2. Terraform requests an ACM certificate in us-east-1, creates DNS validation
+   records, waits for issuance, adds the CloudFront alias, and creates A/AAAA
+   alias records automatically. There is no `acm_certificate_arn` input. To use a
+   different owned domain, set `website_domain` and `dns_zone_name` in local tfvars.
+   Keep your existing AWS credential settings, Terraform backend, and state.
+   Remove old placeholder values from tfvars; `website_domain` must be your actual
+   domain. Set `website_domain = ""` to keep using only the AWS CloudFront hostname.
 3. Check engine availability in your account/region before applying:
 
    ```sh
@@ -26,18 +30,18 @@ updates that user's record. There is no public listing or read endpoint.
 
    Default: `8.0.mysql_aurora.3.10.3`. Override `aurora_engine_version` if needed
    with an available Aurora MySQL 3.x version supporting Data API and Serverless v2.
-4. Run `terraform init`, `terraform plan -out=personal-data.tfplan`, review the
-   plan, and run `terraform apply personal-data.tfplan`. Generate a new plan after
+4. Run `terraform init`, `terraform plan "-out=personal-data.tfplan"`, review the
+   plan, and run `terraform apply "personal-data.tfplan"`. Generate a new plan after
    changing variables or pulling changes. This creates billable AWS resources,
-   creates a CloudFront distribution, changes the ALB HTTP listener to forward
+   configures CloudFront and the domain certificate/DNS, changes the ALB HTTP listener to forward
    static content, and rolls EC2 instances. It does not modify `state-bootstrap`.
-   If an old HTTPS listener exists in state, the plan removes it because CloudFront
+   If an old ALB HTTPS listener exists in state, the plan removes it because CloudFront
    now provides HTTPS. Resources from an earlier partial apply stay in your state;
    there is no need to destroy everything or start a new state.
-5. Run `terraform output -raw website` and open that exact `https://...cloudfront.net`
-   address. CloudFront deployment and the EC2 rolling refresh can take several
+5. Run `terraform output -raw website` and open that exact HTTPS
+   address (the owned domain by default). Certificate validation, CloudFront deployment, and the EC2 rolling refresh can take several
    minutes. Cognito callbacks, logout URLs, API CORS, and EC2's public app config
-   all use the generated CloudFront hostname automatically.
+   all use the chosen website hostname automatically.
 6. In Cognito, open the pool identified by `cognito_user_pool_id`. Create an
    invited user with their email and send the invitation. The hosted sign-in page
    handles the temporary password and initial password change. Self-signup is
@@ -53,16 +57,19 @@ parameters and derives record ownership from the verified token, never the body.
 Tokens stay in browser memory and expire after 15 minutes; sign in again after
 expiry or reload. OAuth uses authorization code, PKCE, and state validation.
 
-## Temporary HTTPS address
+## HTTPS and fallback address
 
-CloudFront uses its default `*.cloudfront.net` certificate and redirects viewer
+CloudFront uses the automatically validated certificate for the owned domain
+and redirects viewer
 HTTP requests to HTTPS. Its origin is the existing ALB over HTTP and serves only
 static React assets and public app configuration. Personal data and bearer tokens
 are sent directly from the browser to the HTTPS API Gateway endpoint; they never
 travel through the HTTP ALB origin. Cognito sign-in is also HTTPS. CloudFront
 caching is disabled, so config changes and frontend deployments need no cache
 invalidation. OAuth callback query strings and cookies are not forwarded to EC2.
-The address remains usable while this CloudFront distribution exists.
+With `website_domain = ""`, it uses the default `*.cloudfront.net` certificate
+and AWS hostname instead. The AWS hostname remains available, but when a custom
+domain is configured, the React form directs users to the chosen domain.
 
 ## Existing GitHub deployment
 
