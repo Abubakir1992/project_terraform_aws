@@ -111,7 +111,9 @@ jobs:
           test -s "$staging/app.js"
 
           # Copy assets first, then the HTML.
-          # Preserve the existing instance.json on each EC2.
+          # Apply the updated Terraform before deploying this form.
+          # Preserve instance.json and app-config.json on each EC2.
+          sudo test -s /var/www/html/app-config.json
           sudo cp "$staging/app.js" /var/www/html/app.js
           sudo cp "$staging/index.html" /var/www/html/index.html
 

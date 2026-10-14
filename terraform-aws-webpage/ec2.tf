@@ -39,11 +39,11 @@ resource "aws_launch_template" "web" {
     security_groups             = [aws_security_group.ec2.id]
   }
 
-  user_data = base64encode(<<-EOF
+  user_data = base64encode(replace(<<-EOF
     #!/bin/bash
     set -euo pipefail
 
-    dnf install -y httpd nodejs22 nodejs22-npm amazon-cloudwatch-agent
+    dnf install -y httpd nodejs22 nodejs22-npm amazon-cloudwatch-agent gzip
 
     # Configure CloudWatch first so startup errors are collected.
     cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'JSON'
@@ -132,37 +132,8 @@ resource "aws_launch_template" "web" {
     }
     JSON
 
-    cat > src.jsx <<'JS'
-    import React from "react";
-    import { createRoot } from "react-dom/client";
-
-    async function start() {
-      const response = await fetch("/instance.json", {
-        cache: "no-store"
-      });
-      if (!response.ok) throw new Error("Cannot load instance information");
-
-      const instance = await response.json();
-
-      createRoot(document.getElementById("root")).render(
-        <main style={{
-          fontFamily: "Arial, sans-serif",
-          maxWidth: 700,
-          margin: "80px auto",
-          padding: 24
-        }}>
-          <h1>Hello from React on EC2!</h1>
-          <p>This page came from instance:</p>
-          <strong>{instance.instanceId}</strong>
-          <p>Deployed using Terraform, Auto Scaling, and ALB.</p>
-        </main>
-      );
-    }
-
-    start().catch(error => {
-      document.getElementById("root").textContent = error.message;
-    });
-    JS
+    printf '%s' '${base64gzip(file("${path.module}/../react-app/src/main.jsx"))}' | base64 -d | gzip -d > src.jsx
+    printf '%s' '${base64gzip(file("${path.module}/../react-app/src/session.js"))}' | base64 -d | gzip -d > session.js
 
     mkdir -p dist
 
@@ -188,20 +159,22 @@ resource "aws_launch_template" "web" {
     runuser -u ec2-user -- bash -c \
       'cd /opt/react-app && npm-22 install --no-audit --no-fund && npm-22 run build'
 
+    printf '%s' '${base64encode(jsonencode(local.app_config))}' | base64 -d > dist/app-config.json
+
     cp -r dist/. /var/www/html/
     restorecon -R /var/www/html
 
     # Prevent cached instance information when ALB selects another server.
     cat > /etc/httpd/conf.d/instance-info.conf <<'APACHE'
-    <Location "/instance.json">
+    <LocationMatch "^/(instance|app-config)[.]json$">
       Header always set Cache-Control "no-store"
-    </Location>
+    </LocationMatch>
     APACHE
 
     httpd -t
     systemctl enable --now httpd
   EOF
-  )
+  , "\r\n", "\n"))
 
   metadata_options {
     http_endpoint = "enabled"
@@ -275,7 +248,9 @@ resource "aws_autoscaling_group" "web" {
   depends_on = [
     aws_route_table_association.public_1,
     aws_route_table_association.public_2,
-    aws_lb_listener.http
+    aws_lb_listener.http,
+    aws_apigatewayv2_route.personal,
+    aws_lambda_permission.personal
   ]
 }
 
