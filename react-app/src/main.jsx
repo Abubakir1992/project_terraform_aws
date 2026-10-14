@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { clearSession, saveSession, restoreSession, isAdministrator } from "./session.js";
 
 const empty = { full_name: "", email: "", phone: "", address: "" };
 const base64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -32,23 +33,71 @@ async function initialize() {
     });
     if (!tokens.ok) throw new Error("Could not finish sign-in. Reload to try again.");
     const data = await tokens.json();
-    // Keep tokens in memory, never in persistent browser storage.
-    return { config, token: data.access_token, expires: Date.now() + data.expires_in * 1000 };
+    const expires = Date.now() + data.expires_in * 1000;
+    saveSession(config, data.access_token, expires);
+    return { config, token: data.access_token, expires };
   }
-  return { config, token: "", expires: 0 };
+  return restoreSession(config);
 }
 
-function App({ session }) {
+function App({ session: initialSession }) {
+  const [session, setSession] = useState(initialSession);
   const [values, setValues] = useState(empty);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [instance, setInstance] = useState("");
+  const [people, setPeople] = useState([]);
+  const [nextCursor, setNextCursor] = useState("");
+  const [loadingPeople, setLoadingPeople] = useState(false);
+  const [listError, setListError] = useState("");
+  const administrator = isAdministrator(session.token);
+  function expireSession() {
+    clearSession();
+    setSession(previous => ({ ...previous, token: "", expires: 0 }));
+    setValues(empty);
+    setPeople([]);
+    setNextCursor("");
+    setMessage("Your session expired. Sign in again.");
+  }
+  useEffect(() => {
+    if (!session.token) return;
+    const timer = setTimeout(expireSession, Math.max(0, session.expires - Date.now()));
+    return () => clearTimeout(timer);
+  }, [session.token, session.expires]);
+
+  async function loadPeople(cursor = "", signal) {
+    if (!session.token) return;
+    setLoadingPeople(true);
+    setListError("");
+    try {
+      const path = administrator ? "/people" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : "") : "/personal-data";
+      const response = await fetch(session.config.apiUrl + path, {
+        headers: { Authorization: "Bearer " + session.token }, cache: "no-store", signal
+      });
+      const data = await response.json();
+      if (signal?.aborted) return;
+      if (response.status === 401) { expireSession(); return; }
+      if (!response.ok) throw new Error(data.message || "Could not load saved details.");
+      setPeople(previous => cursor ? [...previous, ...data.people] : data.people);
+      setNextCursor(data.next_cursor || "");
+    } catch (error) {
+      if (error.name !== "AbortError") setListError(error.message);
+    } finally {
+      if (!signal?.aborted) setLoadingPeople(false);
+    }
+  }
+  useEffect(() => {
+    const controller = new AbortController();
+    if (session.token) loadPeople("", controller.signal);
+    return () => controller.abort();
+  }, [session.token]);
   useEffect(() => {
     fetch("/instance.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null)
       .then(data => setInstance(data?.instanceId || "")).catch(() => {});
   }, []);
 
   async function signIn() {
+    clearSession();
     setBusy(true);
     try {
       const verifier = random();
@@ -68,7 +117,7 @@ function App({ session }) {
   async function save(event) {
     event.preventDefault();
     if (Date.now() >= session.expires) {
-      setMessage("Session expired. Sign out and sign in again.");
+      expireSession();
       return;
     }
     setBusy(true);
@@ -83,6 +132,7 @@ function App({ session }) {
         ? "Please sign out and sign in again." : data.message || "Could not save. Please try again.");
       setValues(empty);
       setMessage(data.message);
+      await loadPeople();
     } catch (error) {
       setMessage(error.message || "Could not connect. Please try again.");
     } finally {
@@ -91,14 +141,17 @@ function App({ session }) {
   }
 
   function signOut() {
-    session.token = "";
+    clearSession();
+    sessionStorage.removeItem("oauth");
+    setSession(previous => ({ ...previous, token: "", expires: 0 }));
     setValues(empty);
+    setPeople([]);
     location.assign(session.config.authUrl + "/logout?" + new URLSearchParams({
       client_id: session.config.clientId, logout_uri: session.config.redirectUri
     }));
   }
 
-  return <main style={{ fontFamily: "Arial, sans-serif", maxWidth: 600, margin: "48px auto", padding: 24, color: "#0f172a" }}>
+  return <main style={{ fontFamily: "Arial, sans-serif", maxWidth: 1000, margin: "48px auto", padding: 24, color: "#0f172a" }}>
     <h1>Your personal details</h1>
     <p>Save your name, email, phone number, and address.</p>
     {session.token ? <>
@@ -116,6 +169,25 @@ function App({ session }) {
         </fieldset>
       </form>
       <p>Saving again replaces your previous details.</p>
+      <section aria-label="Saved people">
+        <h2>{administrator ? "All saved people" : "Your saved details"}</h2>
+        <button disabled={loadingPeople} onClick={() => loadPeople()}>Refresh saved details</button>
+        {loadingPeople && <p role="status">Loading saved details...</p>}
+        {listError && <p role="alert">{listError}</p>}
+        {!loadingPeople && !listError && people.length === 0 && <p>No saved details yet.</p>}
+        {people.length > 0 && <div style={{ overflowX: "auto", marginTop: 16 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <caption style={{ textAlign: "left", marginBottom: 8 }}>{people.length} saved {people.length === 1 ? "person" : "people"}{nextCursor ? " loaded" : ""}</caption>
+            <thead><tr>{["Full name", "Email", "Phone", "Address", "Last updated"].map(label =>
+              <th key={label} scope="col" style={{ padding: 10, borderBottom: "2px solid #cbd5e1" }}>{label}</th>)}</tr></thead>
+            <tbody>{people.map(person => <tr key={person.owner_sub}>
+              {[person.full_name, person.email, person.phone || "—", person.address || "—", person.updated_at].map((value, index) =>
+                <td key={index} style={{ padding: 10, borderBottom: "1px solid #cbd5e1", overflowWrap: "anywhere" }}>{value}</td>)}
+            </tr>)}</tbody>
+          </table>
+        </div>}
+        {nextCursor && <button disabled={loadingPeople} onClick={() => loadPeople(nextCursor)}>Load more people</button>}
+      </section>
     </> : <><p>Sign in with the account invitation sent by your administrator.</p>
       <button onClick={signIn} disabled={busy}>{busy ? "Opening sign-in..." : "Sign in"}</button></>}
     <p role="status" aria-live="polite">{message}</p>

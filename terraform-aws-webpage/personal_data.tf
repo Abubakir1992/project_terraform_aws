@@ -172,7 +172,7 @@ resource "aws_apigatewayv2_api" "personal" {
   protocol_type = "HTTP"
   cors_configuration {
     allow_origins = [local.website_origin]
-    allow_methods = ["PUT", "OPTIONS"]
+    allow_methods = ["GET", "PUT", "OPTIONS"]
     allow_headers = ["authorization", "content-type"]
   }
 }
@@ -225,3 +225,41 @@ resource "aws_lambda_permission" "personal" {
 output "personal_api_url" { value = aws_apigatewayv2_api.personal.api_endpoint }
 output "cognito_user_pool_id" { value = aws_cognito_user_pool.personal.id }
 output "aurora_cluster_arn" { value = aws_rds_cluster.personal.arn }
+
+resource "aws_cognito_user_group" "administrators" {
+  name         = "administrators"
+  user_pool_id = aws_cognito_user_pool.personal.id
+  description  = "May view the personal-data records of all invited users"
+}
+
+variable "administrator_username" {
+  description = "Existing Cognito username to grant administrator listing access; configure privately in local tfvars."
+  type        = string
+  default     = ""
+}
+
+resource "aws_cognito_user_in_group" "administrator" {
+  count        = var.administrator_username != "" ? 1 : 0
+  user_pool_id = aws_cognito_user_pool.personal.id
+  group_name   = aws_cognito_user_group.administrators.name
+  username     = var.administrator_username
+}
+
+resource "aws_apigatewayv2_route" "read" {
+  for_each             = toset(["GET /personal-data", "GET /people"])
+  api_id               = aws_apigatewayv2_api.personal.id
+  route_key            = each.value
+  target               = "integrations/${aws_apigatewayv2_integration.personal.id}"
+  authorization_type   = "JWT"
+  authorizer_id        = aws_apigatewayv2_authorizer.personal.id
+  authorization_scopes = ["email"]
+}
+
+resource "aws_lambda_permission" "read" {
+  for_each      = toset(["personal-data", "people"])
+  statement_id  = "AllowRead-${each.value}"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.personal.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.personal.execution_arn}/*/GET/${each.value}"
+}

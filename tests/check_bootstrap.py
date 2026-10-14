@@ -9,7 +9,8 @@ root = Path(__file__).resolve().parents[1]
 source = (root / "terraform-aws-webpage/ec2.tf").read_text()
 start = source.index("base64encode(replace(<<-EOF")
 expression = source[start:source.index("\n\n  metadata_options")].strip()
-expression = expression.replace("${path.module}/../react-app/src/main.jsx", (root / "react-app/src/main.jsx").as_posix())
+for asset in ("main.jsx", "session.js"):
+    expression = expression.replace("${path.module}/../react-app/src/" + asset, (root / "react-app/src" / asset).as_posix())
 config = {"apiUrl": "https://example.execute-api.us-east-1.amazonaws.com",
           "authUrl": "https://example.auth.us-east-1.amazoncognito.com",
           "clientId": "example", "redirectUri": "https://app.example.com/"}
@@ -23,7 +24,7 @@ script = base64.b64decode(json.loads(result.stdout))
 assert script.startswith(b"#!/bin/bash\n"), "Invalid shebang or line endings"
 assert b"\r" not in script, "Windows line endings in shell script"
 assert len(script) <= 16384, "EC2 user data exceeds 16KB"
-for marker in (b"\nJS\n", b"\nJSON\n", b"\nHTML\n", b"\nAPACHE\n"):
+for marker in (b"\nJSON\n", b"\nHTML\n", b"\nAPACHE\n"):
     assert marker in script, "Heredoc terminator must start in column 1"
 subprocess.run(["bash", "-n"], input=script, check=True)
 print("Bootstrap shell syntax, heredocs, and size verified:", len(script), "bytes")

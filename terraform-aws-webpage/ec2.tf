@@ -43,7 +43,7 @@ resource "aws_launch_template" "web" {
     #!/bin/bash
     set -euo pipefail
 
-    dnf install -y httpd nodejs22 nodejs22-npm amazon-cloudwatch-agent
+    dnf install -y httpd nodejs22 nodejs22-npm amazon-cloudwatch-agent gzip
 
     # Configure CloudWatch first so startup errors are collected.
     cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'JSON'
@@ -132,9 +132,8 @@ resource "aws_launch_template" "web" {
     }
     JSON
 
-    cat > src.jsx <<'JS'
-    ${indent(4, file("${path.module}/../react-app/src/main.jsx"))}
-    JS
+    printf '%s' '${base64gzip(file("${path.module}/../react-app/src/main.jsx"))}' | base64 -d | gzip -d > src.jsx
+    printf '%s' '${base64gzip(file("${path.module}/../react-app/src/session.js"))}' | base64 -d | gzip -d > session.js
 
     mkdir -p dist
 

@@ -21,10 +21,10 @@ ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), email = VALUES(email),
 phone = VALUES(phone), address = VALUES(address)"""
 
 
-def response(status, message):
+def response(status, message, **data):
     return {"statusCode": status, "headers": {
         "content-type": "application/json", "cache-control": "no-store"
-    }, "body": json.dumps({"message": message})}
+    }, "body": json.dumps({"message": message, **data})}
 
 
 def execute(sql, parameters=None):
@@ -34,13 +34,57 @@ def execute(sql, parameters=None):
     )
 
 
+def administrator(claims):
+    groups = claims.get("cognito:groups", [])
+    if isinstance(groups, str):
+        try:
+            groups = json.loads(groups)
+        except ValueError:
+            # HTTP API may stringify array claims as [group-a group-b].
+            groups = [part for part in re.split(r'[\s,\[\]\"]+', groups) if part]
+    return isinstance(groups, list) and "administrators" in groups
+
+
+def read_people(event, claims, owner):
+    global schema_ready
+    path = event.get("rawPath", "/personal-data")
+    columns = ["owner_sub", "full_name", "email", "phone", "address", "updated_at"]
+    if path == "/people":
+        if not administrator(claims):
+            return response(403, "Administrator access is required to view all people.")
+        cursor = (event.get("queryStringParameters") or {}).get("cursor", "")
+        if not isinstance(cursor, str) or (cursor and not re.fullmatch(r"[A-Za-z0-9-]{1,64}", cursor)):
+            return response(400, "Invalid page cursor.")
+        sql = "SELECT " + ", ".join(columns) + " FROM people WHERE owner_sub > :cursor ORDER BY owner_sub LIMIT 51"
+        parameters = [{"name": "cursor", "value": {"stringValue": cursor}}]
+    elif path == "/personal-data":
+        sql = "SELECT " + ", ".join(columns) + " FROM people WHERE owner_sub = :owner_sub"
+        parameters = [{"name": "owner_sub", "value": {"stringValue": owner}}]
+    else:
+        return response(404, "Not found.")
+    try:
+        if not schema_ready:
+            execute(SCHEMA)
+            schema_ready = True
+        result = execute(sql, parameters)
+        people = [{column: field.get("stringValue", "") for column, field in zip(columns, row)}
+                  for row in result.get("records", [])]
+        next_cursor = people[49]["owner_sub"] if len(people) > 50 else ""
+        return response(200, "Saved details loaded.", people=people[:50], next_cursor=next_cursor)
+    except Exception:
+        return response(503, "Could not load saved details. Please try again.")
+
+
 def handler(event, context):
     global schema_ready
     claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {})
     owner = claims.get("sub", "")
     if not isinstance(owner, str) or not re.fullmatch(r"[A-Za-z0-9-]{1,64}", owner):
         return response(401, "Sign in before saving your details.")
-    if event.get("requestContext", {}).get("http", {}).get("method") != "PUT":
+    method = event.get("requestContext", {}).get("http", {}).get("method")
+    if method == "GET":
+        return read_people(event, claims, owner)
+    if method != "PUT":
         return response(405, "Method not allowed.")
     raw = event.get("body") or ""
     if event.get("isBase64Encoded") or not isinstance(raw, str) or len(raw.encode("utf-8")) > 8192:

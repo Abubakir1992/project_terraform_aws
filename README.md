@@ -7,7 +7,8 @@ database password in Secrets Manager; Terraform and React never receive it.
 
 The form collects full name and email, plus optional phone and address. Each
 invited Cognito user owns one record in `personal_data.people`. Saving again
-updates that user's record. There is no public listing or read endpoint.
+updates that user's record. Administrators see a paginated table of all saved people. Other signed-in users
+can read only their own record. There is no unauthenticated listing endpoint.
 
 ## Deployment
 
@@ -54,8 +55,9 @@ updates that user's record. There is no public listing or read endpoint.
 
 The table is created on the first authenticated save. The Lambda uses bound SQL
 parameters and derives record ownership from the verified token, never the body.
-Tokens stay in browser memory and expire after 15 minutes; sign in again after
-expiry or reload. OAuth uses authorization code, PKCE, and state validation.
+Access tokens are kept in browser sessionStorage so refreshing the same tab
+preserves sign-in until the original 15-minute expiry. Sign-out or expiry clears
+the session. No passwords, refresh tokens, or personal records are stored there. OAuth uses authorization code, PKCE, and state validation.
 
 ## HTTPS and fallback address
 
@@ -70,6 +72,20 @@ invalidation. OAuth callback query strings and cookies are not forwarded to EC2.
 With `website_domain = ""`, it uses the default `*.cloudfront.net` certificate
 and AWS hostname instead. The AWS hostname remains available, but when a custom
 domain is configured, the React form directs users to the chosen domain.
+
+## Administrator access and saved people
+
+Set `administrator_username` in a private local tfvars file to the existing
+Cognito username of your administrator. Terraform creates the `administrators`
+group and manages that membership. Do not commit personal email addresses or
+private variable files. After a membership change, sign out and sign in again to
+obtain a token with the updated group claim.
+
+`GET /personal-data` reads only the verified user's record. `GET /people` requires
+the verified token to contain the `administrators` group and returns at most 50
+records per page. The table's **Load more people** button fetches further pages;
+**Refresh saved details** starts over. Saving updates the table automatically.
+All displayed fields are rendered as text, and API responses use no-store.
 
 ## Existing GitHub deployment
 
@@ -87,6 +103,7 @@ the ASG rolls instances, as required by the existing SSH deployment workflow.
 cd react-app
 npm ci
 npm run build
+node --test tests/session.test.mjs
 cd ..
 python -m unittest discover -s personal-api -v
 cd terraform-aws-webpage
