@@ -1,0 +1,27 @@
+name: Validate application and Terraform
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci && npm run build
+        working-directory: react-app
+      - run: python -m unittest discover -s personal-api -v
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+      - run: terraform fmt -check
+        working-directory: terraform-aws-webpage
+      - run: terraform init -backend=false -input=false
+        working-directory: terraform-aws-webpage
+      - run: terraform validate
+        working-directory: terraform-aws-webpage
+      - run: python tests/check_bootstrap.py

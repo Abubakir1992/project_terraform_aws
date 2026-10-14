@@ -15,5 +15,5 @@ output "alb_dns_name" {
 }
 
 output "website" {
-  value = "http://${aws_lb.web.dns_name}"
+  value = local.website_origin
 }
