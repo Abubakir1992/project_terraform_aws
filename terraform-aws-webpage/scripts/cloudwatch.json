@@ -1,0 +1,13 @@
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {"file_path":"/var/log/httpd/access_log","log_group_name":"/terraform-webpage/apache-access","log_stream_name":"{instance_id}"},
+          {"file_path":"/var/log/httpd/error_log","log_group_name":"/terraform-webpage/apache-error","log_stream_name":"{instance_id}"},
+          {"file_path":"/var/log/cloud-init-output.log","log_group_name":"/terraform-webpage/startup","log_stream_name":"{instance_id}"}
+        ]
+      }
+    }
+  }
+}

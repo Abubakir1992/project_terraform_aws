@@ -1,16 +1,18 @@
 {
-    "name": "terraform-react-webpage",
-    "version": "1.0.0",
-    "private": true,
-    "type": "module",
-    "scripts": {
-      "build": "node build.mjs"
-    },
-    "dependencies": {
-      "react": "19.0.0",
-      "react-dom": "19.0.0"
-    },
-    "devDependencies": {
-      "esbuild": "0.25.0"
-    }
+  "name": "motohaus",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node preview.mjs",
+    "test": "node --test tests/auth.test.mjs"
+  },
+  "dependencies": {
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.0"
   }
+}

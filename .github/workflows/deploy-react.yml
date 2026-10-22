@@ -1,132 +1,33 @@
-name: Deploy React to EC2
-
+name: Deploy React with Systems Manager
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - "react-app/**"
-      - ".github/workflows/deploy-react.yml"
-
+    branches: [main]
+    paths: ["react-app/**", "scripts/deploy-react.sh"]
 permissions:
   contents: read
-
+  id-token: write
 concurrency:
   group: react-production-deployment
   cancel-in-progress: false
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
+    environment: production
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: react-app/package-lock.json
-
-      - name: Install dependencies
-        working-directory: react-app
-        run: npm ci
-
-      - name: Build React application
-        working-directory: react-app
-        run: |
-          npm run build
-          test -s dist/index.html
-          test -s dist/app.js
-
-      - name: Package application
-        run: |
-          tar -czf /tmp/react-app.tar.gz \
-            -C react-app/dist .
-
-      - name: Configure SSH
-        env:
-          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-          EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
-        run: |
-          set -euo pipefail
-
-          test -n "$EC2_SSH_KEY"
-          test -n "$EC2_KNOWN_HOSTS"
-
-          install -m 700 -d "$HOME/.ssh"
-
-          printf '%s\n' "$EC2_SSH_KEY" \
-            > "$HOME/.ssh/deploy_key"
-
-          printf '%s\n' "$EC2_KNOWN_HOSTS" \
-            > "$HOME/.ssh/known_hosts"
-
-          chmod 600 "$HOME/.ssh/deploy_key"
-          chmod 600 "$HOME/.ssh/known_hosts"
-
-      - name: Deploy to EC2 instances
-        env:
-          EC2_HOSTS: ${{ secrets.EC2_HOSTS }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$EC2_HOSTS"
-
-          for host in $EC2_HOSTS; do
-            echo "Deploying to $host"
-
-            scp \
-              -i "$HOME/.ssh/deploy_key" \
-              -o BatchMode=yes \
-              -o StrictHostKeyChecking=yes \
-              -o ConnectTimeout=15 \
-              /tmp/react-app.tar.gz \
-              "ec2-user@$host:/home/ec2-user/react-app.tar.gz"
-
-            ssh \
-              -i "$HOME/.ssh/deploy_key" \
-              -o BatchMode=yes \
-              -o StrictHostKeyChecking=yes \
-              -o ConnectTimeout=15 \
-              "ec2-user@$host" 'bash -se' <<'REMOTE'
-          set -euo pipefail
-
-          staging=$(mktemp -d)
-
-          cleanup() {
-            rm -rf "$staging"
-            rm -f "$HOME/react-app.tar.gz"
-          }
-
-          trap cleanup EXIT
-
-          tar -xzf "$HOME/react-app.tar.gz" -C "$staging"
-
-          test -s "$staging/index.html"
-          test -s "$staging/app.js"
-
-          # Copy assets first, then the HTML.
-          # Preserve the existing instance.json on each EC2.
-          sudo cp "$staging/app.js" /var/www/html/app.js
-          sudo cp "$staging/index.html" /var/www/html/index.html
-
-          sudo restorecon -R /var/www/html
-          sudo httpd -t
-          sudo systemctl enable --now httpd
-
-          curl -fsS http://localhost/ >/dev/null
-          curl -fsS http://localhost/app.js >/dev/null
-          curl -fsS http://localhost/instance.json >/dev/null
-
-          echo "Deployment completed."
-          REMOTE
-          done
-
-      - name: Remove SSH key
-        if: always()
-        run: rm -f "$HOME/.ssh/deploy_key"
+          node-version: '22'
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.10.5'
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::295601546427:role/moto-github-deploy
+          aws-region: us-east-1
+      - run: terraform init -input=false
+        working-directory: terraform-aws-webpage
+      - run: bash scripts/deploy-react.sh
