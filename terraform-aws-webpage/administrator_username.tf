@@ -1,5 +1,5 @@
 variable "administrator_username" {
-  description = "Existing Cognito username to grant administrator listing access; configure privately in local tfvars."
+  description = "Administrator email to invite and grant private enquiry access; configure in private tfvars."
   type        = string
   default     = ""
 }

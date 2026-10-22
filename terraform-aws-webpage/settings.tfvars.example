@@ -3,4 +3,4 @@ quicksight_email = "your-email@example.com"
 notification_email = "your-email@example.com"
 create_quicksight_subscription = true
 # website_domain = ""
-# administrator_username = "" # Set only after creating an invited Cognito user.
+# administrator_username = "your-email@example.com" # Terraform sends a Cognito invitation.

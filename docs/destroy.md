@@ -22,4 +22,4 @@ If Terraform creates QuickSight subscription, it manages subscription deletion t
 That subscription is account-wide: do not add unrelated projects then casually destroy it.
 With create_quicksight_subscription = false, an existing subscription is left in place.
 Account termination protection, if enabled later, must be disabled before deletion.
-No AWS apply, deployment or destroy has been run during this source-code update.
+Apply and React deployment update the site; use destroy only for an intentional teardown.
