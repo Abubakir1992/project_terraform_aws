@@ -1,31 +1,24 @@
-name: Validate application and Terraform
-on:
-  pull_request:
-  workflow_dispatch:
+name: Validate motorcycle application
+on: [pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      - run: npm ci && npm run build
+          node-version: '22'
+      - run: npm ci && npm run build && npm test
         working-directory: react-app
-      - run: node --test tests/session.test.mjs
-        working-directory: react-app
-      - run: python -m unittest discover -s personal-api -v
+      - run: python -m unittest discover -s personal-api -p 'test_*.py' -v
+      - run: python -m unittest discover -s event-worker -p 'test_*.py' -v
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.10.5"
+          terraform_version: '1.10.5'
           terraform_wrapper: false
-      - run: terraform fmt -check
-        working-directory: terraform-aws-webpage
-      - run: terraform init -backend=false -input=false
-        working-directory: terraform-aws-webpage
-      - run: terraform validate
+      - run: terraform fmt -check -recursive && terraform init -backend=false -input=false && terraform validate
         working-directory: terraform-aws-webpage
       - run: python tests/check_bootstrap.py
+      - run: python tests/check_lengths.py

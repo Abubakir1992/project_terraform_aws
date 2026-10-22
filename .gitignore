@@ -1,2 +1,13 @@
+**/.terraform/
+**/node_modules/
+**/dist/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+*.pem
 *.zip
 __pycache__/
+.env
+.env.*

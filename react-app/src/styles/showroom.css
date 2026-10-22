@@ -1,0 +1,16 @@
+.hero{height:min(750px,78vw);min-height:580px;position:relative;color:white;background:#171b17;overflow:hidden}
+.hero>img{width:100%;height:100%;object-fit:cover;object-position:65% 55%}.hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,15,12,.9),rgba(8,15,12,.22) 70%),linear-gradient(0deg,rgba(8,15,12,.45),transparent 40%)}
+.hero-content{position:absolute;top:17%;left:6%;max-width:680px}.hero-content .eyebrow{color:#f3ad82;margin-bottom:27px}.hero-content>p:not(.eyebrow){color:#d1d5cc;font-size:16px;margin-bottom:32px}
+.hero-note{position:absolute;bottom:32px;left:6%;right:6%;display:flex;justify-content:space-between;font-size:10px;letter-spacing:1.4px}
+.ticker{background:#daddcb;display:flex;justify-content:space-around;padding:22px 4%;font-size:11px;letter-spacing:1.4px;font-weight:700;gap:20px}
+.collection{padding:90px 5%}.section-top{display:flex;justify-content:space-between;align-items:flex-end}.section-top>p{color:#6b6c62;font-size:13px;padding-bottom:26px}
+.filters{display:flex;gap:10px;margin:12px 0 35px;flex-wrap:wrap}.filters button{background:transparent;border:1px solid #d3d4ca;padding:11px 19px;font-size:12px}
+.filters button[aria-pressed=true]{background:#222a23;border-color:#222a23;color:#fff}.bike-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.bike-photo{height:290px;position:relative;background:#ddd;overflow:hidden}.bike-photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s}.bike:hover img{transform:scale(1.035)}
+.bike-tag{position:absolute;left:15px;top:15px;background:#f5f4ef;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.bike-heading{display:flex;gap:12px;align-items:center;margin-top:23px}.bike-heading h3{margin-bottom:12px}.bike-number{align-self:flex-start;font-size:10px;padding-top:5px;color:#7b7c72}
+.bike>p{color:#696c63;font-size:13px}.bike .engine{font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:17px}.bike .photo-caption{font-size:10px;color:#76776e}
+.bike-actions{border-top:1px solid #d2d4ca;padding-top:17px;display:flex;justify-content:space-between;align-items:center;gap:8px}.bike-actions button{border:0;background:none;padding:0;font-size:12px;font-weight:700;text-align:left}.bike-actions a{font-size:10px;text-decoration:underline}
+.story{padding:90px 8%;background:#e7e8dd;text-align:center}.story>.eyebrow{color:#58614e}.story>p:not(.eyebrow){max-width:680px;margin:20px auto 45px;color:#626859}.values{display:flex;justify-content:center;gap:45px;border-top:1px solid #c2c7b7;padding-top:30px;font-size:10px;letter-spacing:1px}
+@media(max-width:900px){.bike-grid{gap:16px}.bike-photo{height:220px}.bike-actions{align-items:flex-start;flex-direction:column}.section-top>p{max-width:200px}}
+@media(max-width:760px){.hero{height:670px;min-height:0}.hero>img{object-position:62%}.hero-content{left:7%;right:5%;top:18%}.hero-note span:last-child{display:none}.ticker span:last-child{display:none}.ticker{font-size:9px}.collection{padding:65px 6%}.section-top{display:block}.section-top>p{max-width:none;padding:0}.bike-grid{grid-template-columns:1fr;gap:40px}.bike-photo{height:330px}.bike-actions{flex-direction:row}.values{flex-direction:column;gap:20px}.story{padding:65px 7%}}
