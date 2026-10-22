@@ -15,6 +15,7 @@ resource "aws_iam_role" "github_deploy" {
 resource "aws_iam_role_policy" "github_deploy" {
   role = aws_iam_role.github_deploy.id
   policy = jsonencode({ Version = "2012-10-17", Statement = [
+    { Effect = "Allow", Action = ["s3:ListBucket", "s3:GetBucketLocation"], Resource = "arn:aws:s3:::abubakir-terraform-state-e1ac9875972c93c0548685fa0d" },
     { Effect = "Allow", Action = ["s3:GetObject"], Resource = "arn:aws:s3:::abubakir-terraform-state-e1ac9875972c93c0548685fa0d/webpage/terraform.tfstate" },
     { Effect = "Allow", Action = ["s3:ListBucket", "s3:GetBucketLocation"], Resource = aws_s3_bucket.releases.arn },
     { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject"], Resource = "${aws_s3_bucket.releases.arn}/site/*" },
