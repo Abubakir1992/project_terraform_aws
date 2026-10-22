@@ -42,7 +42,8 @@ QuickSight setup needs subscription permissions and IAM PassRole for its data-so
 ## Optional GitHub Actions
 
 The workflow uses the Terraform-created moto-github-deploy role and GitHub OIDC.
-Trust is restricted to this repository and its production environment.
+Trust matches the observed OIDC subject, including immutable owner/repository IDs,
+and is restricted to this repository and its production environment.
 Terraform manages the provider in this account, where none existed at deployment time.
 No SSH keys or stored AWS credentials are needed. The role can read the existing
 state object, publish React releases and start the SSM deployment association.

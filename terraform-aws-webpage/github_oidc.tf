@@ -8,7 +8,7 @@ resource "aws_iam_role" "github_deploy" {
     Effect = "Allow", Principal = { Federated = aws_iam_openid_connect_provider.github.arn },
     Action = "sts:AssumeRoleWithWebIdentity", Condition = { StringEquals = {
       "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
-      "token.actions.githubusercontent.com:sub" = "repo:Abubakir1992/project_terraform_aws:environment:production"
+      "token.actions.githubusercontent.com:sub" = "repo:Abubakir1992@79552141/project_terraform_aws@1408548768:environment:production"
     } }
   }] })
 }
