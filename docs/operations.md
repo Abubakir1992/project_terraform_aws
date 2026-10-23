@@ -5,7 +5,7 @@
 3. Administrator: sign in, read records, and exercise pagination.
 4. Confirm SNS subscription and receive a request-ID-only notification.
 5. Check queues drain and the dead-letter queue stays empty.
-6. Run the Athena daily query, then open the QuickSight dashboard.
+6. Run the Athena daily query to inspect enquiry totals.
 7. Verify CloudTrail delivery and its audit query after logs arrive.
 8. Replace an instance and verify SSM installs the current React release.
 9. Edit React only and redeploy without another infrastructure apply.

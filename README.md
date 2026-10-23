@@ -12,7 +12,7 @@ The API verifies Cognito tokens, client ID and administrator group membership.
 - API Gateway → Lambda → encrypted Aurora MySQL through Secrets Manager/Data API.
 - SQS outbox → Lambda → EventBridge → SQS → Lambda → SNS notification.
 - Private S3 buckets for React releases, CloudTrail, anonymous analytics and Athena results.
-- Athena/Glue tables and saved queries; QuickSight dataset and daily enquiry dashboard.
+- Athena/Glue tables and saved queries for daily enquiry and audit analysis.
 - Systems Manager publishes React without SSH. CloudWatch alarms monitor failures/backlogs.
 
 EC2 user data installs applications and starts services. It contains no HTML or React.

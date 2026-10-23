@@ -17,7 +17,7 @@ flowchart LR
   Worker --> SNS[SNS request-ID notification]
   Worker --> Analytics[S3 anonymous metadata]
   Analytics --> Athena[Athena + Glue]
-  Athena --> QuickSight[Daily enquiry dashboard]
+  Athena --> Reports[Saved SQL query results]
   CloudTrail --> Audit[S3 audit logs]
   Audit --> Athena
   Admin[Administrator + Cognito] --> API

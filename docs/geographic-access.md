@@ -10,7 +10,7 @@ This is IP geolocation, not citizenship or residency verification. A US VPN/prox
 can appear to be in the US. US visitors using a foreign VPN can be blocked.
 The regional API sees a proxy source address when reached through CloudFront;
 traffic routed through an edge outside the US can also be rejected there.
-AWS-console services such as QuickSight and the Cognito hosted login are separate;
+The AWS console and the Cognito hosted login are separate;
 this setting restricts the website and its contact API, not the whole AWS account.
 
 Outside-US requests receive HTTP 403. There is no public bypass or admin exception.

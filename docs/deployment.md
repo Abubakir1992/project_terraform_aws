@@ -16,11 +16,9 @@ cd ..
 .\scripts\deploy-react.ps1
 ```
 
-Your supplied email is in private local quicksight.auto.tfvars for QuickSight and SNS.
+Your supplied email is in private local notifications.auto.tfvars for SNS and admin setup.
 The private download includes this email-only config; no AWS credentials are included.
 Use settings.tfvars.example only when starting without that local email configuration.
-QuickSight creates a subscription inside your current AWS account, not a new AWS account.
-Set create_quicksight_subscription = false if already subscribed before applying.
 Confirm the SNS subscription email after apply; notifications contain no customer details.
 
 The owned domain remains abubakir-dev.com in your existing Route 53 zone.
@@ -39,7 +37,6 @@ Terraform may remove its previously managed local webpage.pem file during apply.
 Do not create a fresh state or copy live state into the downloadable source.
 Read destroy.md: this development configuration skips Aurora final snapshots.
 Verify Aurora engine availability, CloudFront prefix-list quota and service quotas.
-QuickSight setup needs subscription permissions and IAM PassRole for its data-source role.
 
 ## Optional GitHub Actions
 
