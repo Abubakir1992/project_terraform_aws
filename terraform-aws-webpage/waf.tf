@@ -12,6 +12,21 @@ resource "aws_wafv2_web_acl" "protection" {
     sampled_requests_enabled   = false
   }
   rule {
+    name     = "us-only"
+    priority = 0
+    override_action {
+      none {}
+    }
+    statement {
+      rule_group_reference_statement { arn = aws_wafv2_rule_group.us_only[each.key].arn }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "us-only-${each.key}"
+      sampled_requests_enabled   = false
+    }
+  }
+  rule {
     name     = "common-threats"
     priority = 1
     override_action {
@@ -47,8 +62,4 @@ resource "aws_wafv2_web_acl" "protection" {
       sampled_requests_enabled   = false
     }
   }
-}
-resource "aws_wafv2_web_acl_association" "api" {
-  resource_arn = aws_api_gateway_stage.contacts.arn
-  web_acl_arn  = aws_wafv2_web_acl.protection["api"].arn
 }
