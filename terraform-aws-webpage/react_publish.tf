@@ -1,7 +1,8 @@
 # Publish React after initial creation/recreation and after frontend/config changes.
-# The machine running Terraform needs PowerShell 7, Node/npm and AWS CLI.
+# Uses built-in Windows PowerShell; Node/npm and AWS CLI must be installed.
 resource "terraform_data" "react_publish" {
   triggers_replace = {
+    runner      = "windows-powershell-5.1"
     association = aws_ssm_association.release.association_id
     config      = sha256(jsonencode(local.app_config))
     frontend = sha256(join("", [for name in sort(tolist(fileset("${path.module}/../react-app", "**"))) :
@@ -12,7 +13,9 @@ resource "terraform_data" "react_publish" {
   }
   provisioner "local-exec" {
     working_dir = "${path.module}/.."
-    command     = "pwsh -NoProfile -NonInteractive -File scripts/deploy-react.ps1"
+    interpreter = ["C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+    "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"]
+    command = "scripts/deploy-react.ps1"
     environment = {
       MOTO_RELEASE_BUCKET      = aws_s3_bucket.releases.id
       MOTO_RELEASE_ASSOCIATION = aws_ssm_association.release.association_id

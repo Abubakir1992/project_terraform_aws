@@ -3,7 +3,8 @@
 Use the existing project folder and existing S3 backend/state.
 Authenticate with AWS CLI credentials or AWS_PROFILE; Terraform no longer needs key inputs.
 Terraform publishes React after initial creation, recreation, or frontend/config changes.
-The Terraform machine needs PowerShell 7 (`pwsh`), Node/npm and AWS CLI on PATH.
+Automatic publication uses Windows' built-in PowerShell directly, without `pwsh` on PATH.
+The Terraform machine needs Node/npm and AWS CLI on PATH. Lambda tests still use PowerShell 7.
 
 ```powershell
 cd C:\Users\abubakir\Project_terraform
