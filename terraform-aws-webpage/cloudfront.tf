@@ -51,7 +51,8 @@ resource "aws_cloudfront_distribution" "web" {
   }
   restrictions {
     geo_restriction {
-      restriction_type = "none"
+      restriction_type = "whitelist"
+      locations        = ["US"]
     }
   }
   viewer_certificate {
