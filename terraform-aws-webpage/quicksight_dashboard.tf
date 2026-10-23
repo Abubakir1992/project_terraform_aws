@@ -34,6 +34,14 @@ resource "aws_quicksight_dashboard" "contacts" {
       }
     }
   }
+  dynamic "permissions" {
+    for_each = var.quicksight_dashboard_viewer_arns
+    content {
+      principal = permissions.value
+      actions = ["quicksight:DescribeDashboard", "quicksight:ListDashboardVersions",
+      "quicksight:QueryDashboard"]
+    }
+  }
   permissions {
     principal = aws_quicksight_user.admin[0].arn
     actions = ["quicksight:DescribeDashboard", "quicksight:ListDashboardVersions",

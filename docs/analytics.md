@@ -34,3 +34,9 @@ DIRECT_QUERY queries Athena when the dashboard loads; no SPICE refresh is needed
 This is an enquiry report, not a website traffic report.
 QuickSight, Athena scans, WAF, Aurora, ALB and EC2 incur charges.
 Live query execution and QuickSight rendering must be verified after AWS deployment.
+
+Dashboard ownership belongs to the invited motohaus-admin user. AWS-console users
+are separate QuickSight identities; administrator status alone does not share a dashboard.
+Set quicksight_dashboard_viewer_arns in private tfvars to existing QuickSight user ARNs
+for view/query access. The local deployment includes the active console administrator.
+Open the us-east-1 region; an empty report means there are no retained enquiry rows.
