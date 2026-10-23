@@ -22,7 +22,7 @@ resource "aws_autoscaling_group" "web" {
   }
   lifecycle { ignore_changes = [desired_capacity] }
   depends_on = [aws_route_table_association.public_1,
-  aws_route_table_association.public_2, aws_iam_role_policy.release]
+  aws_route_table_association.public_2, aws_iam_role_policy.release, aws_cloudwatch_log_group.web]
 }
 resource "aws_autoscaling_policy" "web_cpu" {
   name                   = "webpage-cpu-scaling"
