@@ -1,13 +1,26 @@
 data "archive_file" "worker" {
-  type        = "zip"
-  source_file = "${path.module}/../event-worker/handler.py"
-  output_path = "${path.module}/event-worker.zip"
+  type             = "zip"
+  output_path      = "${path.module}/event-worker.zip"
+  output_file_mode = "0755"
+  source {
+    content  = file("${path.module}/../event-worker/handler.ps1")
+    filename = "handler.ps1"
+  }
+  dynamic "source" {
+    for_each = toset(["bootstrap", "runtime.ps1", "sdk.ps1"])
+    content {
+      content  = replace(file("${path.module}/../lambda-runtime/${source.value}"), "\r", "")
+      filename = source.value
+    }
+  }
 }
 resource "aws_lambda_function" "worker" {
   function_name    = "moto-events"
   role             = aws_iam_role.worker.arn
-  runtime          = "python3.12"
-  handler          = "handler.handler"
+  runtime          = "provided.al2023"
+  handler          = "handler.ps1"
+  layers           = [aws_lambda_layer_version.powershell.arn]
+  memory_size      = 512
   filename         = data.archive_file.worker.output_path
   source_code_hash = data.archive_file.worker.output_base64sha256
   timeout          = 30

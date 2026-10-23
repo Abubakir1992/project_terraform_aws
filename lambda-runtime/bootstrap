@@ -1,0 +1,5 @@
+#!/bin/sh
+export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+export POWERSHELL_TELEMETRY_OPTOUT=1
+export POWERSHELL_UPDATECHECK=Off
+exec /opt/powershell/pwsh -NoLogo -NoProfile -NonInteractive -File /var/task/runtime.ps1

@@ -4,7 +4,9 @@ Use the existing project folder and existing S3 backend/state.
 Authenticate with AWS CLI credentials or AWS_PROFILE; Terraform no longer needs key inputs.
 
 ```powershell
-cd C:\Users\abubakir\Project_terraform\terraform-aws-webpage
+cd C:\Users\abubakir\Project_terraform
+python scripts/build-lambda.py
+cd terraform-aws-webpage
 terraform init
 terraform plan -out=moto.tfplan
 terraform apply moto.tfplan

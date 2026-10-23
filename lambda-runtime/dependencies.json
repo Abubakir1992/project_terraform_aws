@@ -1,0 +1,12 @@
+{
+  "powershell": "7.4.21",
+  "powershell_sha256": "3fc5e1567c450bd7bd5ae69ebb0a9a4a4e0418bbc36b0232cf6dd547f0bfc0eb",
+  "packages": {
+    "AWSSDK.Core": "4.0.102.13",
+    "AWSSDK.RDSDataService": "4.0.100.21",
+    "AWSSDK.SQS": "4.0.100.20",
+    "AWSSDK.EventBridge": "4.0.101.7",
+    "AWSSDK.SimpleNotificationService": "4.0.100.21",
+    "AWSSDK.S3": "4.0.104.6"
+  }
+}
