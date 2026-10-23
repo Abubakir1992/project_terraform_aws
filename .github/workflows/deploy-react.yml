@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["react-app/**", "scripts/deploy-react.sh"]
+    paths: ["react-app/**", "scripts/deploy-react.sh", "scripts/archive-react.py"]
 permissions:
   contents: read
   id-token: write

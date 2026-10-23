@@ -19,6 +19,7 @@ resource "aws_iam_role_policy" "github_deploy" {
     { Effect = "Allow", Action = ["s3:GetObject"], Resource = "arn:aws:s3:::abubakir-terraform-state-e1ac9875972c93c0548685fa0d/webpage/terraform.tfstate" },
     { Effect = "Allow", Action = ["s3:ListBucket", "s3:GetBucketLocation"], Resource = aws_s3_bucket.releases.arn },
     { Effect = "Allow", Action = ["s3:GetObject", "s3:PutObject"], Resource = "${aws_s3_bucket.releases.arn}/site/*" },
+    { Effect = "Allow", Action = ["s3:PutObject", "s3:DeleteObject"], Resource = "${aws_s3_bucket.releases.arn}/artifacts/github-actions/*" },
     { Effect = "Allow", Action = ["ssm:StartAssociationsOnce"], Resource = "arn:aws:ssm:us-east-1:${local.suffix}:association/${aws_ssm_association.release.association_id}" }
   ] })
 }

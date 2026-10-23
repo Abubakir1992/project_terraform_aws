@@ -8,6 +8,9 @@ cd react-app
 npm ci --no-audit --no-fund
 npm run build
 printf '%s\n' "$config" > dist/app-config.json
+cd ..
+python3 scripts/archive-react.py "$bucket" --run "${GITHUB_RUN_ID:?GitHub run ID required}"
+cd react-app
 aws s3 sync dist "s3://$bucket/site/" --exclude '*.html' --region us-east-1
 aws s3 sync dist "s3://$bucket/site/" --exclude '*' --include '*.html' --region us-east-1
 aws ssm start-associations-once --association-ids "$association" --region us-east-1
