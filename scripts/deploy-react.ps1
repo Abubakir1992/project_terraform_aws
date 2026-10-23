@@ -6,10 +6,16 @@ function Invoke-Checked { param([scriptblock]$Command)
 }
 Push-Location "$projectRoot/terraform-aws-webpage"
 try {
+  if ($env:MOTO_RELEASE_BUCKET -and $env:MOTO_RELEASE_ASSOCIATION -and $env:MOTO_APP_CONFIG) {
+    $config = $env:MOTO_APP_CONFIG
+    $bucket = $env:MOTO_RELEASE_BUCKET
+    $association = $env:MOTO_RELEASE_ASSOCIATION
+  } else {
   $config = terraform output -json app_config
   if ($LASTEXITCODE -ne 0) { throw 'Apply Terraform before deploying React.' }
   $bucket = terraform output -raw release_bucket
   $association = terraform output -raw release_association
+  }
 } finally { Pop-Location }
 Push-Location "$projectRoot/react-app"
 try {

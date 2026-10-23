@@ -17,6 +17,7 @@ The API verifies Cognito tokens, client ID and administrator group membership.
 
 EC2 user data installs applications and starts services. It contains no HTML or React.
 React comes only from `react-app/`, deployed independently after Terraform apply.
+Terraform now builds and publishes React automatically after a rebuild or frontend/config change.
 New Auto Scaling instances install the current S3 release within five minutes through EventBridge Scheduler and SSM.
 The ALB checks `/health.txt`, so empty infrastructure remains healthy before deployment.
 

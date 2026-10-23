@@ -1,7 +1,9 @@
-# Apply infrastructure, then deploy React
+# Apply infrastructure and publish React
 
 Use the existing project folder and existing S3 backend/state.
 Authenticate with AWS CLI credentials or AWS_PROFILE; Terraform no longer needs key inputs.
+Terraform publishes React after initial creation, recreation, or frontend/config changes.
+The Terraform machine needs PowerShell 7 (`pwsh`), Node/npm and AWS CLI on PATH.
 
 ```powershell
 cd C:\Users\abubakir\Project_terraform
@@ -12,7 +14,7 @@ terraform plan -out=moto.tfplan
 terraform apply moto.tfplan
 terraform output -raw website
 cd ..
-# Make your React edits, then publish:
+# Optional: publish React edits without running Terraform:
 .\scripts\deploy-react.ps1
 ```
 
