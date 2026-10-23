@@ -1,8 +1,10 @@
 resource "aws_lambda_function" "personal" {
   function_name                  = "webpage-personal-api"
   role                           = aws_iam_role.personal.arn
-  runtime                        = "python3.12"
-  handler                        = "handler.handler"
+  runtime                        = "provided.al2023"
+  handler                        = "handler.ps1"
+  layers                         = [aws_lambda_layer_version.powershell.arn]
+  memory_size                    = 512
   filename                       = data.archive_file.personal.output_path
   source_code_hash               = data.archive_file.personal.output_base64sha256
   timeout                        = 20

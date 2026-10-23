@@ -43,8 +43,9 @@ npm ci
 npm run build
 npm test
 cd ..
-python -m unittest discover -s personal-api -p "test_*.py" -v
-python -m unittest discover -s event-worker -p "test_*.py" -v
+python scripts/build-lambda.py
+pwsh -NoProfile -File tests/powershell-api.ps1
+pwsh -NoProfile -File tests/powershell-worker.ps1
 python tests/check_bootstrap.py
 python tests/check_lengths.py
 terraform -chdir=terraform-aws-webpage fmt -check -recursive
